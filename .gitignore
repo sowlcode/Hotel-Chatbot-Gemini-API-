@@ -1,7 +1,6 @@
 # Environment / secrets
 .env
 .env.*
-system-prompt.txt
 !.env.example
 
 # Node
