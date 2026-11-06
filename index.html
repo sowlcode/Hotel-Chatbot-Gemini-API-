@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#eef2ff">
+<title>Lia, the Lakeview Grand concierge bot</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🌊%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f6ff; --panel:#fff; --text:#14172b; --muted:#7a8099; --border:#e4e7f3;
+  --accent:#536dfe; --accent2:#a477f5; --accent-light:#eceeff; --danger:#e54848;
+  --code:#eef0fa; --shadow:0 24px 60px rgba(40,55,140,.28); color-scheme:light;
+  --display:"Bricolage Grotesque",Inter,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:Inter,system-ui,sans-serif;background:#eef2ff;color:var(--text);-webkit-text-size-adjust:100%}
+button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
+
+/* ---------- LANDING ---------- */
+.stage{
+  position:relative;min-height:100dvh;overflow:hidden;display:flex;align-items:center;color:#14172b;
+  background:radial-gradient(1100px 560px at 88% -8%,#dfe5ff 0%,transparent 62%),
+             linear-gradient(180deg,#f7f9ff 0%,#e9eeff 60%,#dde4ff 100%);
+}
+.hero{
+  position:relative;z-index:1;width:100%;max-width:880px;margin:0 auto;text-align:center;
+  padding:100px clamp(20px,6vw,72px) 110px;
+  padding-left:max(clamp(20px,6vw,72px),env(safe-area-inset-left));
+}
+h1{
+  font-family:var(--display);font-weight:700;font-size:clamp(33px,6.2vw,62px);line-height:1.05;
+  letter-spacing:-.025em;margin:0 0 10px;text-wrap:balance;
+}
+.tagline{font-family:var(--display);font-weight:600;font-size:clamp(18px,2.6vw,24px);color:#3f55e8;margin:0 0 18px}
+.lead{font-size:clamp(15.5px,2.2vw,18px);line-height:1.65;color:#4a5070;max-width:70ch;margin:0 auto 14px}
+.lead2{font-size:15px;line-height:1.6;color:#4a5070;max-width:70ch;margin:0 auto 26px}
+.exist-note{display:none;margin:0 0 24px;font-size:15px;line-height:1.6;color:#3a4060;font-weight:500}
+.cta-row{justify-content:center;display:flex;flex-wrap:wrap;align-items:center;gap:14px 18px}
+.powered{
+  display:inline-flex;align-items:center;gap:9px;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:500;
+  border:1px solid #cfd6f5;background:rgba(255,255,255,.8);color:#3a4060;backdrop-filter:blur(6px);
+}
+.powered i{width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,#6ee7ff,var(--accent2))}
+a.hl{text-decoration:none;transition:background .15s}
+a.hl:hover{background:linear-gradient(transparent 0,rgba(164,119,245,.3) 0)}
+.hl{font-weight:700;color:#3f55e8;background:linear-gradient(transparent 58%,rgba(164,119,245,.3) 58%);padding:0 3px;border-radius:3px}
+.credit{position:absolute;left:0;right:0;bottom:max(36px,env(safe-area-inset-bottom));margin:0;padding:0 150px;text-align:center;font-size:13px;line-height:1.6;color:#6a7090}
+
+/* ---------- LAUNCHER ---------- */
+#launcher{
+  position:fixed;right:max(20px,env(safe-area-inset-right));bottom:max(20px,env(safe-area-inset-bottom));z-index:1000;
+  height:60px;padding:0 22px 0 18px;border-radius:999px;display:flex;align-items:center;gap:10px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:600;font-size:15px;
+  box-shadow:0 12px 32px rgba(83,109,254,.55);transition:transform .2s ease,opacity .2s ease;
+}
+#launcher:hover{transform:scale(1.05)}
+#launcher svg{width:26px;height:26px;flex-shrink:0}
+#launcher.hide{transform:scale(.6);opacity:0;pointer-events:none}
+#launcher::after{content:"";position:absolute;inset:0;border-radius:999px;border:2px solid var(--accent);animation:ring 2.4s ease-out 1.2s 2;opacity:0}
+@keyframes ring{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.35,1.6);opacity:0}}
+
+/* ---------- PANEL ---------- */
+#panel{
+  --pad:18px;
+  position:fixed;z-index:1001;right:21px;bottom:21px;zoom:.96; /* scales the whole floating chat, text and controls included */
+  width:clamp(360px,36vw,420px);height:min(660px,calc((100dvh - 40px)/.96));
+  background:var(--panel);border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;overflow:hidden;
+  transform-origin:bottom right;transform:scale(.85) translateY(20px);opacity:0;pointer-events:none;
+  transition:transform .22s cubic-bezier(.2,.9,.3,1.2),opacity .18s ease,width .25s ease,height .25s ease,border-radius .25s ease,right .25s ease,bottom .25s ease;
+}
+#panel.open{transform:none;opacity:1;pointer-events:auto}
+#panel.max{zoom:1;right:0;bottom:0;width:100%;height:100dvh;border-radius:0;border:0;--pad:max(22px,calc((100% - 880px)/2))}
+
+header{
+  display:flex;align-items:center;gap:12px;flex-shrink:0;color:#fff;
+  padding:14px var(--pad);padding-top:max(14px,env(safe-area-inset-top));
+  background:linear-gradient(120deg,#3f55e8,var(--accent2));
+}
+.avatar{
+  position:relative;width:40px;height:40px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;
+  background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.55);font-family:var(--display);font-weight:700;font-size:18px;color:#fff;
+}
+.who{line-height:1.3;min-width:0}
+.who b{display:block;font-size:15px;font-weight:600}
+.who span{display:block;font-size:11.5px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.actions{margin-left:auto;display:flex;gap:2px;flex-shrink:0}
+.icon-btn{
+  height:36px;min-width:36px;padding:0 9px;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:6px;
+  color:rgba(255,255,255,.9);font-size:12.5px;font-weight:600;transition:background .15s;
+}
+.icon-btn:hover{background:rgba(255,255,255,.2)}
+.icon-btn svg{width:18px;height:18px}
+header :focus-visible{outline-color:#fff}
+
+#chat{
+  flex:1;overflow-y:auto;overscroll-behavior:contain;background:var(--bg);
+  padding:20px var(--pad);display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth;
+}
+.welcome{margin:auto;text-align:center;max-width:340px}
+.welcome .avatar{
+  width:60px;height:60px;font-size:26px;margin:0 auto 16px;border:0;color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 10px 26px rgba(83,109,254,.4);
+}
+.welcome h2{font-family:var(--display);font-size:22px;margin:0 0 8px;letter-spacing:-.01em}
+.welcome p{color:var(--muted);font-size:13.5px;line-height:1.6;margin:0 0 18px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chip{
+  padding:9px 14px;border:1px solid var(--border);border-radius:999px;font-size:12.5px;font-weight:500;
+  background:var(--panel);transition:all .15s;
+}
+.chip:hover{border-color:var(--accent);background:var(--accent-light);color:var(--accent)}
+
+.message{display:flex;flex-direction:column;gap:5px;max-width:86%}
+#panel.max .message{max-width:78%}
+.message.user{align-self:flex-end;align-items:flex-end}
+.message.bot{align-self:flex-start;align-items:flex-start}
+.sender{color:var(--muted);font-size:11px;font-weight:600;padding:0 4px}
+.bubble{
+  padding:11px 15px;border-radius:18px;font-size:14px;line-height:1.65;
+  white-space:pre-wrap;overflow-wrap:anywhere;
+}
+.user .bubble{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-bottom-right-radius:5px;box-shadow:0 6px 16px rgba(83,109,254,.28)}
+.bot .bubble{background:var(--panel);border:1px solid var(--border);border-bottom-left-radius:5px}
+.bot.error .bubble{color:var(--danger);border-color:var(--danger)}
+.bubble code{background:var(--code);padding:1px 5px;border-radius:5px;font-size:12.5px}
+.bubble pre{white-space:pre;overflow-x:auto;background:var(--code);padding:10px 12px;border-radius:10px;margin:8px 0;font-size:12.5px;line-height:1.5}
+.bubble pre code{background:none;padding:0}
+
+.typing{display:flex;gap:5px;padding:6px 0}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:bounce 1s infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{opacity:.3;transform:none}30%{opacity:1;transform:translateY(-4px)}}
+
+.composer{padding:12px var(--pad) 4px;flex-shrink:0;background:var(--panel);border-top:1px solid var(--border)}
+form{
+  display:flex;align-items:flex-end;gap:8px;background:var(--bg);
+  border:1px solid var(--border);border-radius:18px;padding:7px 7px 7px 14px;transition:border-color .15s,box-shadow .15s;
+}
+form:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(83,109,254,.18)}
+textarea{
+  flex:1;resize:none;border:0;outline:0;background:transparent;color:var(--text);
+  font:inherit;font-size:16px;line-height:1.5;padding:7px 0;max-height:130px;
+}
+@media(min-width:601px){textarea{font-size:14px}}
+textarea:focus,textarea:focus-visible{outline:none;box-shadow:none}
+textarea::placeholder{color:var(--muted)}
+#send{
+  height:40px;min-width:66px;padding:0 16px;border-radius:12px;color:#fff;font-weight:600;font-size:13px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));transition:filter .15s,opacity .15s;
+}
+#send:hover{filter:brightness(1.08)}
+#send.stop{background:var(--danger)}
+#send:disabled{opacity:.4;cursor:not-allowed}
+.hint{text-align:center;font-size:11px;line-height:1.5;color:var(--muted);padding:8px 4px max(10px,env(safe-area-inset-bottom))}
+.hint b{color:var(--text);font-weight:600}
+
+/* ---------- RESPONSIVE ---------- */
+@media(min-width:601px) and (max-width:1024px){
+  #panel{width:min(440px,calc((100vw - 40px)/.96));height:min(720px,calc((100dvh - 40px)/.96))}
+}
+@media(max-width:600px),(max-height:520px){
+  #panel,#panel.max{zoom:1;right:0;bottom:0;width:100%;height:100dvh;border-radius:0;border:0;--pad:max(14px,env(safe-area-inset-left))}
+  #maxBtn{display:none}
+  .message,#panel.max .message{max-width:92%}
+  html.lock,html.lock body{overflow:hidden}
+}
+@media(max-width:600px){
+  .credit{padding:0 84px;bottom:max(52px,env(safe-area-inset-bottom))}
+  .cr-note{display:none}
+  .lead,.lead2,.exist-note{text-align:justify;hyphens:auto;-webkit-hyphens:auto}
+  .exist-note{display:block}
+  .lead2{margin-bottom:6px}
+  .hero{padding:28px 20px 150px;padding-left:max(20px,env(safe-area-inset-left))}
+  #launcher{width:60px;padding:0;justify-content:center}
+  #launcher span{display:none}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <main class="hero">
+    <h1>Lakeview Grand Hotel</h1>
+    <p class="tagline">Calm waters, warm welcomes</p>
+    <p class="lead">A fictional 4-star luxury hotel featuring 120 elegantly designed rooms, located at 28 Lakeshore Drive, Pine Harbor. The hotel offers stunning lake views, a beautiful outdoor infinity pool, an exclusive rooftop bar, and a luxurious spa, providing guests with a relaxing and memorable stay.</p>
+    <p class="lead2">Lia, our virtual concierge, is in the bubble at the bottom right. Ask about rooms, dining, transfers or special offers.</p>
+    <p class="exist-note">Lakeview Grand Hotel does not exist.</p>
+    <div class="cta-row">
+      <span class="powered"><i></i>Powered by Gemini 3.8 Flash</span>
+    </div>
+  </main>
+  <p class="credit"><span class="cr-note">Lakeview Grand Hotel does not exist. </span>This is a fun project built by <a class="hl" href="https://www.instagram.com/spaderraik/" target="_blank" rel="noopener noreferrer">SOWL (Sudip Rai)</a>.</p>
+</div>
+
+<button id="launcher" aria-label="Open chat with Lia">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.6-.8L3 21l1.9-5.1A8.4 8.4 0 1 1 21 11.5z"/></svg>
+  <span>Ask Lia</span>
+</button>
+
+<section id="panel" role="dialog" aria-label="Lia, Lakeview Grand concierge" aria-hidden="true">
+  <header>
+    <div class="avatar">L</div>
+    <div class="who"><b>Lia</b><span>Virtual concierge, powered by Gemini 3.8 Flash</span></div>
+    <div class="actions">
+      <button class="icon-btn" id="clear" title="Clear conversation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg>
+        <span>Clear</span>
+      </button>
+      <button class="icon-btn" id="maxBtn" title="Maximize" aria-label="Maximize">
+        <svg id="maxIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+      </button>
+      <button class="icon-btn" id="closeBtn" title="Close" aria-label="Close chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="chat"></main>
+
+  <div class="composer">
+    <form id="form">
+      <textarea id="input" rows="1" placeholder="Ask about your stay…" autocomplete="off" aria-label="Message"></textarea>
+      <button id="send" type="submit" disabled>Send</button>
+    </form>
+    <div class="hint"><b>Powered by Gemini 3.8 Flash.</b> A fun project built by <a class="hl" href="https://www.instagram.com/spaderraik/" target="_blank" rel="noopener noreferrer">SOWL (Sudip Rai)</a>. Lia can make mistakes, so please confirm details with reception.</div>
+  </div>
+</section>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const chat = $("chat"), input = $("input"), form = $("form"), sendBtn = $("send");
+  const panel = $("panel"), launcher = $("launcher");
+
+  let history = [], controller = null, busy = false;
+
+  const MAX_ICON = '<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>';
+  const MIN_ICON = '<path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/>';
+
+  const SUGGESTIONS = ["Room types and rates", "Dining and spa hours", "Airport transfers", "Make a booking request"];
+
+  // ---------- Open / close / maximize ----------
+  function openChat() {
+    panel.classList.add("open");
+    panel.setAttribute("aria-hidden", "false");
+    launcher.classList.add("hide");
+    document.documentElement.classList.add("lock");
+    setTimeout(() => input.focus(), 220);
+  }
+  function closeChat() {
+    panel.classList.remove("open");
+    panel.setAttribute("aria-hidden", "true");
+    launcher.classList.remove("hide");
+    document.documentElement.classList.remove("lock");
+    launcher.focus();
+  }
+  function toggleMax() {
+    const max = panel.classList.toggle("max");
+    $("maxIcon").innerHTML = max ? MIN_ICON : MAX_ICON;
+    $("maxBtn").title = max ? "Minimize" : "Maximize";
+    $("maxBtn").setAttribute("aria-label", max ? "Minimize" : "Maximize");
+    scrollDown();
+  }
+  function ask(text) {
+    if (busy) { openChat(); return; }
+    openChat();
+    input.value = text;
+    form.requestSubmit();
+  }
+  launcher.onclick = openChat;
+  $("closeBtn").onclick = closeChat;
+  $("maxBtn").onclick = toggleMax;
+    document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && panel.classList.contains("open")) {
+      if (panel.classList.contains("max")) toggleMax(); else closeChat();
+    }
+  });
+
+  // ---------- Helpers ----------
+  function scrollDown() { chat.scrollTop = chat.scrollHeight; }
+
+  function esc(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  // Tiny, safe markdown: code blocks, inline code, bold. Input is escaped first.
+  function render(text) {
+    let html = esc(text);
+    html = html.replace(/```(?:\w+)?\n?([\s\S]*?)(```|$)/g, (_, c) => `<pre><code>${c.replace(/\n$/, "")}</code></pre>`);
+    html = html.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+    html = html.replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>");
+    return html;
+  }
+
+  function welcomeHTML() {
+    const w = document.createElement("div");
+    w.className = "welcome"; w.id = "welcome";
+    w.innerHTML = '<div class="avatar">L</div><h2>Welcome to Lakeview Grand</h2><p>I’m Lia, the hotel’s virtual concierge. Ask me about rooms, dining, the spa or planning your stay.</p>';
+    const chips = document.createElement("div");
+    chips.className = "chips";
+    SUGGESTIONS.forEach(s => {
+      const b = document.createElement("button");
+      b.className = "chip"; b.type = "button"; b.textContent = s;
+      b.onclick = () => { input.value = s; form.requestSubmit(); };
+      chips.appendChild(b);
+    });
+    w.appendChild(chips);
+    return w;
+  }
+
+  function addMessage(role, text = "") {
+    $("welcome")?.remove();
+    const wrap = document.createElement("div");
+    wrap.className = `message ${role}`;
+    const sender = document.createElement("div");
+    sender.className = "sender";
+    sender.textContent = role === "user" ? "You" : "Lia";
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.textContent = text;
+    wrap.append(sender, bubble);
+    chat.appendChild(wrap);
+    scrollDown();
+    return bubble;
+  }
+
+  function showTyping(bubble) {
+    const t = document.createElement("div");
+    t.className = "typing";
+    for (let i = 0; i < 3; i++) t.appendChild(document.createElement("span"));
+    bubble.replaceChildren(t);
+  }
+
+  function setBusy(v) {
+    busy = v;
+    sendBtn.textContent = v ? "Stop" : "Send";
+    sendBtn.classList.toggle("stop", v);
+    sendBtn.disabled = !v && !input.value.trim();
+  }
+
+  function resizeInput() {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 130) + "px";
+  }
+
+  input.addEventListener("input", () => {
+    resizeInput();
+    if (!busy) sendBtn.disabled = !input.value.trim();
+  });
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      form.requestSubmit();
+    }
+  });
+
+  // ---------- Stream ----------
+  async function readStream(response, bubble) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "", full = "";
+
+    function processEvent(evt) {
+      const lines = evt.split("\n").filter(l => l.startsWith("data:")).map(l => l.slice(5).trim());
+      for (const data of lines) {
+        if (!data || data === "[DONE]") continue;
+        let json;
+        try { json = JSON.parse(data); } catch { continue; }
+        const cand = json.candidates?.[0];
+        for (const part of cand?.content?.parts || []) {
+          if (typeof part.text === "string" && !part.thought) full += part.text;
+        }
+        if (full) { bubble.innerHTML = render(full); scrollDown(); }
+        if (cand?.finishReason === "SAFETY" && !full) {
+          throw new Error("This response was blocked for safety reasons.");
+        }
+      }
+    }
+
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split(/\r?\n\r?\n/);
+        buffer = events.pop();
+        events.forEach(processEvent);
+      }
+      buffer += decoder.decode();
+      if (buffer.trim()) processEvent(buffer);
+    } finally {
+      reader.releaseLock();
+    }
+    return full;
+  }
+
+  // ---------- Send ----------
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (busy) { controller?.abort(); return; }
+
+    const message = input.value.trim();
+    if (!message) return;
+
+    input.value = "";
+    resizeInput();
+    addMessage("user", message);
+    history.push({ role: "user", parts: [{ text: message }] });
+
+    const bubble = addMessage("bot");
+    showTyping(bubble);
+    controller = new AbortController();
+    setBusy(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ history }),
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        let msg = `Request failed (${response.status})`;
+        try { const d = await response.json(); if (d.error) msg = d.error; } catch {}
+        throw new Error(msg);
+      }
+      if (!response.body) throw new Error("The server returned no response stream.");
+
+      const reply = await readStream(response, bubble);
+      if (!reply.trim()) throw new Error("Lia returned an empty response.");
+      history.push({ role: "model", parts: [{ text: reply }] });
+
+    } catch (err) {
+      history.pop(); // drop the unanswered user turn
+      if (err.name === "AbortError") {
+        if (bubble.textContent.trim() && !bubble.querySelector(".typing")) {
+          bubble.innerHTML += "\n\n<i>[Stopped]</i>";
+        } else {
+          bubble.parentElement.remove();
+        }
+      } else {
+        bubble.textContent = "Error: " + err.message;
+        bubble.parentElement.classList.add("error");
+        console.error(err);
+      }
+    } finally {
+      controller = null;
+      setBusy(false);
+      input.focus();
+    }
+  });
+
+  // ---------- Clear ----------
+  $("clear").onclick = () => {
+    controller?.abort();
+    history = [];
+    chat.replaceChildren(welcomeHTML());
+    input.value = "";
+    resizeInput();
+    setBusy(false);
+    input.focus();
+  };
+
+  chat.appendChild(welcomeHTML());
+})();
+</script>
+</body>
+</html>

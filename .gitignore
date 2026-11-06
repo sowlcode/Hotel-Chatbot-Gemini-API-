@@ -1,0 +1,28 @@
+# Environment / secrets
+.env
+.env.*
+system-prompt.txt
+!.env.example
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build output
+dist/
+build/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Misc
+*.local
+.cache/
